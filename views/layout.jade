@@ -1,0 +1,107 @@
+doctype html
+html
+    head
+        title= title
+        meta(charset="UTF-8")
+        meta(name="viewport" content="width=device-width, initial-scale=1.0")
+        meta(name="description" content="Author: T.Davidsen")
+        link(rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css")
+        script(src="https://code.jquery.com/jquery-3.6.0.min.js")
+        script(src="https://cdn.jsdelivr.net/npm/uuid@8.3.2/dist/umd/uuid.min.js")
+        script(src="https://cdn.jsdelivr.net/npm/chart.js")
+    script.
+        $(document).ready(function () {
+            // Add new expense
+            $('#addExpenseForm').on('submit', function (e) {
+                e.preventDefault(); // Prevent page refresh on form submission
+
+                const category = $('#category').val();
+                const amount = $('#amount').val();
+
+                // Check if the amount is a valid and positive number
+                if (!amount || isNaN(amount) || parseFloat(amount) <= 0) {
+                    alert("Please enter a valid positive number for the amount.");
+                    return;
+                }
+
+                // Get current date and time
+                const date = new Date().toISOString(); // ISO format (YYYY-MM-DDTHH:mm:ss.sssZ)
+                const id = uuid.v4();
+
+                $.post('/api/budget/expense', {category, amount, date, id}, function (response) {
+                    if (response.budget) {
+                        console.log("Got budget", response.budget);
+                        refreshBudgetData()
+                    }
+                }).fail(function () {
+                    alert('Failed to add expense.');
+                });
+
+                function refreshBudgetData() {
+                    $.get('/api/budget', function (response) {
+                        console.log("Updated budget data:", response);
+                        location.reload(); // Reloads the page to reflect changes (simplest method)
+                    });
+                }
+            });
+            // Change Total Income
+            $('#setIncomeForm').on('submit', function (e) {
+                e.preventDefault(); // Prevent page refresh on form submission
+
+                const income = $('#income').val();
+
+                // Check if the income is a valid and positive number
+                if (!income || isNaN(income) || parseFloat(income) <= 0) {
+                    alert("Please enter a valid positive number for income.");
+                    return;
+                }
+
+                $.post('/api/budget/income', {income}, function (response) {
+                    if (response.success) {
+                        console.log("Updated income:", response.income);
+                        refreshBudgetData();
+                    }
+                }).fail(function () {
+                    alert('Failed to update income.');
+                });
+
+                function refreshBudgetData() {
+                    $.get('/api/budget', function (response) {
+                        console.log("Updated budget data:", response);
+                        location.reload(); // Reloads the page to reflect changes (simplest method)
+                    });
+                }
+            });
+        });
+header
+    block header
+body
+    block content
+
+    div(class="container mt-4")
+        div(class="w-100")
+            h3 Add New Expense:
+            form(id="addExpenseForm", class="needs-validation w-100", novalidate)
+                .d-flex.gap-3(style="min-height: 50px;")
+                    div(class="flex-grow-1")
+                        label(for="category", class="form-label") Category:
+                        input(type="text", id="category", name="category", class="form-control", required style="height: 40px; min-width: 100%;")
+                        small(class="text-danger d-block" style="min-height: 20px; visibility: hidden;") Validation error text
+                    div(class="flex-grow-1")
+                        label(for="amount", class="form-label") Amount:
+                        input(type="number", id="amount", name="amount", class="form-control", required style="height: 40px; min-width: 100%;")
+                        small(class="text-danger d-block" style="min-height: 20px; visibility: hidden;") Validation error text
+                button(type="submit", class="btn btn-primary mt-3 w-100", style="height: 45px;") Add Expense
+    div(class="container mt-4")
+        div(class="w-100")
+            h3 Total Income:
+            form(id="setIncomeForm", class="needs-validation w-100", novalidate)
+                .d-flex.gap-3(style="min-height: 50px;")
+                    div(class="flex-grow-1")
+                        label(for="income", class="form-label") Set Income:
+                        input(type="number", id="income", name="income", class="form-control", required style="height: 40px; min-width: 100%;")
+                        small(class="text-danger d-block" style="min-height: 20px; visibility: hidden;") Validation error text
+                button(type="submit", class="btn btn-success mt-3 w-100", style="height: 45px;") Update Income
+footer
+    include footer
+

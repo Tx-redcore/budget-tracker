@@ -1,0 +1,123 @@
+extends layout
+
+block header
+    nav.navbar.navbar-expand-sm.navbar-dark.bg-dark
+        a.navbar-brand.ms-4 Budget Tracker
+
+block content
+    #app
+        div.d-flex.justify-content-center.flex-wrap.mt-4.container
+            canvas#expensesOverTimeChart(style="max-height: 300px;") // Expenses over time
+            canvas#expensePieChartByCategory(style="max-height: 300px;") // Expenses by Category
+        dynamic-table
+
+    // Vue Import
+    script(src="https://unpkg.com/vue@3.2.0/dist/vue.esm-browser.js" type="module")
+
+    script(type="module").
+        import { createApp } from "https://unpkg.com/vue@3.2.0/dist/vue.esm-browser.js";
+        import { DynamicTable } from "../public/files/DynamicTable.js";
+
+        const app = createApp({
+        components: {
+        'dynamic-table': DynamicTable
+        },
+        data() {
+        return {
+        income: 0,
+        tableData: []
+        };
+        },
+        mounted() {
+        this.fetchBudget();
+        },
+        methods: {
+        async fetchBudget() {
+        try {
+        const response = await fetch("/api/budget");
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+
+        const data = await response.json();
+        this.income = data.income;
+        this.tableData = data.expenses;
+
+        this.renderChart();
+        this.renderPieChart();
+        } catch (error) {
+        console.error("Error loading budget:", error);
+        }
+        },
+
+        renderChart() {
+        const ctx = document.getElementById('expensesOverTimeChart').getContext('2d');
+        const labels = this.tableData.map(expense => new Date(expense.date).toLocaleDateString());
+        const dataValues = this.tableData.map(expense => parseFloat(expense.amount));
+
+        new Chart(ctx, {
+        type: 'bar',
+        data: {
+        labels: labels,
+        datasets: [{
+        label: 'Expenses ($)',
+        data: dataValues,
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        borderColor: 'rgba(255, 99, 132, 1)',
+        borderWidth: 1
+        }]
+        },
+        options: {
+        scales: {
+        y: { beginAtZero: true },
+        x: { title: { display: true, text: 'Date' } }
+        }
+        }
+        });
+        },
+
+        renderPieChart() {
+        const ctx = document.getElementById('expensePieChartByCategory').getContext('2d');
+        const categoryTotals = this.aggregateExpensesByCategory();
+
+        const colors = [
+        'rgba(255, 99, 132, 0.2)', 'rgba(54, 162, 235, 0.2)',
+        'rgba(255, 206, 86, 0.2)', 'rgba(75, 192, 192, 0.2)',
+        'rgba(153, 102, 255, 0.2)', 'rgba(255, 159, 64, 0.2)'
+        ];
+        const borderColors = colors.map(c => c.replace('0.2', '1'));
+
+        new Chart(ctx, {
+        type: 'pie',
+        data: {
+        labels: Object.keys(categoryTotals),
+        datasets: [{
+        label: 'Expense Distribution by Category',
+        data: Object.values(categoryTotals),
+        backgroundColor: colors,
+        borderColor: borderColors,
+        borderWidth: 1
+        }]
+        },
+        options: {
+        responsive: true,
+        plugins: {
+        legend: { position: 'top' },
+        tooltip: {
+        callbacks: {
+        label: tooltipItem => `${tooltipItem.label}: $${tooltipItem.raw}`
+        }
+        }
+        }
+        }
+        });
+        },
+
+        aggregateExpensesByCategory() {
+        return this.tableData.reduce((totals, { category, amount }) => {
+        totals[category] = (totals[category] || 0) + parseFloat(amount);
+        return totals;
+        }, {});
+        }
+        }
+        });
+
+        app.mount("#app");
