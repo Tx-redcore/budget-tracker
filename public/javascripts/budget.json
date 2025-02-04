@@ -1,0 +1,23 @@
+{
+  "income": 1000,
+  "expenses": [
+    {
+      "id": "e7f68ec3-1844-45ba-a363-d4f3a02bdddb",
+      "date": "2025-02-04T22:45:27.991Z",
+      "category": "Groceries ",
+      "amount": "100"
+    },
+    {
+      "id": "a403ce93-777c-4bbe-a4b5-ac33873aae8f",
+      "date": "2025-02-04T22:52:28.956Z",
+      "category": "Dog Food",
+      "amount": "500"
+    },
+    {
+      "id": "6b33de79-7508-43a5-b204-9bacf0efc0dc",
+      "date": "2025-02-04T22:52:50.096Z",
+      "category": "Food",
+      "amount": "20"
+    }
+  ]
+}
